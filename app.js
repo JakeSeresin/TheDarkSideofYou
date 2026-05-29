@@ -162,10 +162,29 @@ const optionsMap = [
    UI & EVENT LISTENERS
    ========================================= */
 document.addEventListener("DOMContentLoaded", () => {
+    // Ensure brightness overlay exists
+    if (!document.getElementById('brightness-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.id = 'brightness-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0)';
+        overlay.style.zIndex = '999';
+        document.body.appendChild(overlay);
+    }
+
     document.getElementById('settings-btn').addEventListener('click', toggleSettings);
     document.getElementById('font-size').addEventListener('input', updateSettings);
     document.getElementById('accent-color').addEventListener('change', updateSettings);
-    document.getElementById('brightness-level').addEventListener('input', updateBrightness);
+    
+    const brightnessSlider = document.getElementById('brightness-level');
+    if (brightnessSlider) {
+        brightnessSlider.addEventListener('input', updateBrightness);
+    }
 
     document.getElementById('subject-bio').addEventListener('input', checkBio);
     document.getElementById('subject-name').addEventListener('input', checkBio);
@@ -190,7 +209,8 @@ function updateBrightness() {
     const brightness = document.getElementById('brightness-level').value;
     const overlay = document.getElementById('brightness-overlay');
     if (overlay) {
-        overlay.style.backgroundColor = `rgba(0, 0, 0, ${1 - brightness / 100})`;
+        const darkAmount = 1 - (brightness / 100);
+        overlay.style.backgroundColor = `rgba(0, 0, 0, ${darkAmount})`;
     }
 }
 
@@ -272,7 +292,6 @@ function startTimer() {
     state.timer = setInterval(() => {
         if (state.timeLeft <= 1) {
             stopTimer();
-            // Auto-select "Not telling / Skip this" (mask type, weight 1)
             handleAnswer("mask", 1);
         } else {
             state.timeLeft--;
@@ -302,32 +321,40 @@ function renderQuestion() {
     stopTimer();
 
     const q = state.questions[state.currentIndex];
-    document.getElementById('question-counter').innerText = `SEQ: ${String(state.currentIndex + 1).padStart(2, '0')} / ${state.questions.length}`;
+    const counterEl = document.getElementById('question-counter');
+    if (counterEl) {
+        counterEl.innerText = `SEQ: ${String(state.currentIndex + 1).padStart(2, '0')} / ${state.questions.length}`;
+    }
     
     const qTextEl = document.getElementById('question-text');
-    qTextEl.style.opacity = 0;
-    
-    setTimeout(() => {
-        qTextEl.innerText = q.q;
-        qTextEl.style.opacity = 1;
+    if (qTextEl) {
+        qTextEl.style.opacity = 0;
         
-        const optsContainer = document.getElementById('options-container');
-        optsContainer.innerHTML = '';
-        
-        optionsMap.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            btn.innerText = opt.label;
-            btn.onclick = () => {
-                stopTimer();
-                handleAnswer(opt.type, opt.darkWeight);
-            };
-            optsContainer.appendChild(btn);
-        });
+        setTimeout(() => {
+            qTextEl.innerText = q.q;
+            qTextEl.style.opacity = 1;
+            
+            const optsContainer = document.getElementById('options-container');
+            if (optsContainer) {
+                optsContainer.innerHTML = '';
+                
+                optionsMap.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.innerText = opt.label;
+                    btn.onclick = () => {
+                        stopTimer();
+                        handleAnswer(opt.type, opt.darkWeight);
+                    };
+                    optsContainer.appendChild(btn);
+                });
+            }
 
-        document.getElementById('custom-trap-input').value = '';
-        startTimer();
-    }, 400);
+            const trapInput = document.getElementById('custom-trap-input');
+            if (trapInput) trapInput.value = '';
+            startTimer();
+        }, 400);
+    }
 }
 
 function handleAnswer(type, darkWeight) {
@@ -350,12 +377,14 @@ function submitCustomAnswer() {
 
 function nextQuestion() {
     const view = document.getElementById('quiz-view');
-    view.classList.add('fade-out');
-    setTimeout(() => {
-        state.currentIndex++;
-        renderQuestion();
-        view.classList.remove('fade-out');
-    }, 500);
+    if (view) {
+        view.classList.add('fade-out');
+        setTimeout(() => {
+            state.currentIndex++;
+            renderQuestion();
+            view.classList.remove('fade-out');
+        }, 500);
+    }
 }
 
 function updateSensoryUI() {
@@ -372,8 +401,11 @@ function finishEvaluation() {
     stopTimer();
     switchView('quiz-view', 'result-view');
 
-    document.getElementById('res-name').innerText = state.name.toUpperCase();
-    document.getElementById('res-bio').innerText = bioParser(state.bio);
+    const resName = document.getElementById('res-name');
+    if (resName) resName.innerText = state.name.toUpperCase();
+    
+    const resBio = document.getElementById('res-bio');
+    if (resBio) resBio.innerText = bioParser(state.bio);
 
     let dominantType = "mask";
     let maxScore = -1;
@@ -392,20 +424,30 @@ function finishEvaluation() {
         aggressive: { title: "MALIGNANT DOMINANCE", desc: "You harbor active, unapologetic predatory impulses. You feel no remorse for the damage you inflict or desire to inflict. Your moral compass is fundamentally inverted; you equate cruelty with strength, and compassion with exploitable weakness." }
     };
 
-    document.getElementById('res-archetype').innerText = archetypes[dominantType].title;
-    document.getElementById('res-desc').innerText = archetypes[dominantType].desc;
+    const resArchetype = document.getElementById('res-archetype');
+    if (resArchetype) resArchetype.innerText = archetypes[dominantType].title;
+    
+    const resDesc = document.getElementById('res-desc');
+    if (resDesc) resDesc.innerText = archetypes[dominantType].desc;
 
     const powerIndex = ((state.scores.aggressive + state.scores.mask) / state.depth * 100).toFixed(1);
     const subIndex = ((state.scores.submissive + state.scores.denial) / state.depth * 100).toFixed(1);
     
-    document.getElementById('res-stats').innerHTML = `
-        DOMINANCE / MALICE INDEX : ${powerIndex}% <br>
-        SUBMISSION / FEAR INDEX  : ${subIndex}% <br>
-        HYPOCRISY QUOTIENT       : ${((state.scores.lie / state.depth) * 100).toFixed(1)}%
-    `;
+    const resStats = document.getElementById('res-stats');
+    if (resStats) {
+        resStats.innerHTML = `
+            DOMINANCE / MALICE INDEX : ${powerIndex}% <br>
+            SUBMISSION / FEAR INDEX  : ${subIndex}% <br>
+            HYPOCRISY QUOTIENT       : ${((state.scores.lie / state.depth) * 100).toFixed(1)}%
+        `;
+    }
 
     if (state.customInputCount > 0) {
-        document.getElementById('trap-result').style.display = 'block';
-        document.getElementById('res-trap').innerText = `You attempted to bypass the system parameters ${state.customInputCount} time(s) by providing custom text. This data was entirely ignored. Your refusal to be categorized is a predictable defense mechanism. Your ego desperately demands to feel 'special' or 'unquantifiable' to mask how painfully ordinary your psychological defects truly are.`;
+        const trapResult = document.getElementById('trap-result');
+        const resTrap = document.getElementById('res-trap');
+        if (trapResult && resTrap) {
+            trapResult.style.display = 'block';
+            resTrap.innerText = `You attempted to bypass the system parameters ${state.customInputCount} time(s) by providing custom text. This data was entirely ignored. Your refusal to be categorized is a predictable defense mechanism. Your ego desperately demands to feel 'special' or 'unquantifiable' to mask how painfully ordinary your psychological defects truly are.`;
+        }
     }
 }
