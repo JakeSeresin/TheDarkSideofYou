@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dark-side-v3';
+const CACHE_NAME = 'dark-side-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,9 @@ const ASSETS = [
   './app.js',
   './manifest.json',
   './sw-register.js',
-  './icons/icon.png'
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable.png'
 ];
 
 self.addEventListener('install', (e) => {
