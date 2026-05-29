@@ -1,20 +1,24 @@
-const CACHE_NAME = 'dark-side-v1';
+const CACHE_NAME = 'dark-side-v2';
 const ASSETS = [
   './',
-  './index.html'
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  './sw-register.js',
+  './icons/icon.png'
 ];
 
 self.addEventListener('install', (e) => {
-  self.skipWaiting(); // Forces the waiting service worker to become the active service worker
+  self.skipWaiting(); 
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(clients.claim()); // Ensure the service worker takes control immediately
+  e.waitUntil(clients.claim()); 
   
-  // Clean up any old caches if you ever change the CACHE_NAME version
   e.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -31,10 +35,15 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
-      // Serve from cache if found, otherwise try network.
-      // If network fails (offline), fallback to the cached index.html.
-      return cachedResponse || fetch(e.request).catch(() => {
-        return caches.match('./index.html');
+      if (cachedResponse) {
+          return cachedResponse;
+      }
+      return fetch(e.request).catch(() => {
+        // Fallback to index.html ONLY for navigation requests.
+        // Prevents HTML bleeding into missing assets/icons.
+        if (e.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
       });
     })
   );

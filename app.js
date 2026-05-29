@@ -5,7 +5,7 @@ const STORE_COMPLIANT_MODE = false; // TOGGLE: true for Corporate, false for Tab
 const TIMER_SECONDS = 20; // Pressure timer per question
 
 /* =========================================
-   QUESTION POOLS - RAW TABOO (100 questions from questions.txt)
+   QUESTION POOLS - RAW TABOO
    ========================================= */
 const rawPool = [
     { q: "Have you ever imagined one of your parents dead and felt relief instead of sadness?", target: "all" },
@@ -147,7 +147,7 @@ const state = {
     questions: [], currentIndex: 0, customInputCount: 0,
     darkScore: 0, maxDarkScore: 0,
     scores: { mask: 0, aggressive: 0, lie: 0, denial: 0, submissive: 0 },
-    timer: null, timeLeft: TIMER_SECONDS, timerActive: false
+    timer: null, transitionTimer: null, timeLeft: TIMER_SECONDS, timerActive: false
 };
 
 const optionsMap = [
@@ -162,7 +162,6 @@ const optionsMap = [
    UI & EVENT LISTENERS
    ========================================= */
 document.addEventListener("DOMContentLoaded", () => {
-    // Ensure brightness overlay exists
     if (!document.getElementById('brightness-overlay')) {
         const overlay = document.createElement('div');
         overlay.id = 'brightness-overlay';
@@ -178,6 +177,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById('settings-btn').addEventListener('click', toggleSettings);
+    document.getElementById('close-settings').addEventListener('click', toggleSettings);
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        const modal = document.getElementById('settings-modal');
+        if (e.target !== modal && !modal.contains(e.target) && e.target.closest('#settings-btn') === null) {
+            modal.style.display = 'none';
+        }
+    });
+
     document.getElementById('font-size').addEventListener('input', updateSettings);
     document.getElementById('accent-color').addEventListener('change', updateSettings);
     
@@ -191,7 +200,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('btn-begin').addEventListener('click', beginEvaluation);
     
     document.getElementById('btn-trap').addEventListener('click', submitCustomAnswer);
-    document.getElementById('btn-restart').addEventListener('click', () => location.reload());
+    
+    // Keyboard accessibility for trap input
+    document.getElementById('custom-trap-input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') submitCustomAnswer();
+    });
+
+    document.getElementById('btn-restart').addEventListener('click', restartDiagnostic);
 });
 
 function toggleSettings() {
@@ -233,6 +248,8 @@ function bioParser(bioText) {
         return "Subject actively projects a facade of benevolence. The use of positive descriptors is highly calculated, indicating an urgent need to control external perception. This suggests deep-seated hypocrisy and a fear of genuine psychological exposure.";
     } else if (isoMatch > posMatch && isoMatch > 0) {
         return "Subject leans on defensive withdrawal patterns. By framing themselves as isolated or passive, they preemptively absolve themselves of accountability. This 'damaged' persona is a shield against behavioral scrutiny.";
+    } else if (posMatch === isoMatch && posMatch > 0) {
+        return "Subject displays highly polarized, conflicting traits. The equal reliance on positive posturing and defensive isolation points to a fractured identity struggling to maintain a coherent narrative.";
     } else {
         return "Subject provided vague, non-committal evasion. A stark refusal to offer substantive self-reflection. This points to a fragile ego mechanism terrified of categorization.";
     }
@@ -246,6 +263,8 @@ function shuffleArray(array) {
 }
 
 function beginEvaluation() {
+    document.getElementById('btn-begin').disabled = true;
+
     state.name = document.getElementById('subject-name').value.trim();
     state.gender = document.getElementById('subject-gender').value;
     state.bio = document.getElementById('subject-bio').value;
@@ -305,11 +324,22 @@ function updateTimerDisplay() {
     if (timerEl) {
         timerEl.innerText = `${state.timeLeft}s`;
         if (state.timeLeft <= 5) {
-            timerEl.style.color = '#5A0010';
+            timerEl.style.color = 'var(--accent-color)';
         } else {
             timerEl.style.color = '#888';
         }
     }
+}
+
+function disableAllButtons() {
+    const buttons = document.querySelectorAll('.option-btn, #btn-trap');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.pointerEvents = 'none';
+    });
+    
+    const trapInput = document.getElementById('custom-trap-input');
+    if (trapInput) trapInput.disabled = true;
 }
 
 function renderQuestion() {
@@ -330,7 +360,9 @@ function renderQuestion() {
     if (qTextEl) {
         qTextEl.style.opacity = 0;
         
-        setTimeout(() => {
+        // Use state transition timer to prevent overlaps
+        clearTimeout(state.transitionTimer);
+        state.transitionTimer = setTimeout(() => {
             qTextEl.innerText = q.q;
             qTextEl.style.opacity = 1;
             
@@ -343,7 +375,6 @@ function renderQuestion() {
                     btn.className = 'option-btn';
                     btn.innerText = opt.label;
                     btn.onclick = () => {
-                        stopTimer();
                         handleAnswer(opt.type, opt.darkWeight);
                     };
                     optsContainer.appendChild(btn);
@@ -351,7 +382,17 @@ function renderQuestion() {
             }
 
             const trapInput = document.getElementById('custom-trap-input');
-            if (trapInput) trapInput.value = '';
+            const btnTrap = document.getElementById('btn-trap');
+            
+            if (trapInput) {
+                trapInput.value = '';
+                trapInput.disabled = false;
+            }
+            if (btnTrap) {
+                btnTrap.disabled = false;
+                btnTrap.style.pointerEvents = 'auto';
+            }
+
             startTimer();
         }, 400);
     }
@@ -359,6 +400,7 @@ function renderQuestion() {
 
 function handleAnswer(type, darkWeight) {
     stopTimer();
+    disableAllButtons();
     state.scores[type]++;
     state.darkScore += darkWeight;
     updateSensoryUI();
@@ -368,7 +410,9 @@ function handleAnswer(type, darkWeight) {
 function submitCustomAnswer() {
     const input = document.getElementById('custom-trap-input').value.trim();
     if (input === '') return;
+    
     stopTimer();
+    disableAllButtons();
     state.customInputCount++;
     state.darkScore += 2;
     updateSensoryUI();
@@ -379,7 +423,8 @@ function nextQuestion() {
     const view = document.getElementById('quiz-view');
     if (view) {
         view.classList.add('fade-out');
-        setTimeout(() => {
+        clearTimeout(state.transitionTimer);
+        state.transitionTimer = setTimeout(() => {
             state.currentIndex++;
             renderQuestion();
             view.classList.remove('fade-out');
@@ -388,7 +433,8 @@ function nextQuestion() {
 }
 
 function updateSensoryUI() {
-    const ratio = state.darkScore / state.maxDarkScore;
+    // Cap ratio at 1.0 to prevent completely blinding the user
+    const ratio = Math.min(state.darkScore / state.maxDarkScore, 1.0);
     const spread = ratio * 250; 
     const darken = ratio * 0.90;
     
@@ -442,12 +488,31 @@ function finishEvaluation() {
         `;
     }
 
+    const trapResult = document.getElementById('trap-result');
     if (state.customInputCount > 0) {
-        const trapResult = document.getElementById('trap-result');
         const resTrap = document.getElementById('res-trap');
         if (trapResult && resTrap) {
             trapResult.style.display = 'block';
             resTrap.innerText = `You attempted to bypass the system parameters ${state.customInputCount} time(s) by providing custom text. This data was entirely ignored. Your refusal to be categorized is a predictable defense mechanism. Your ego desperately demands to feel 'special' or 'unquantifiable' to mask how painfully ordinary your psychological defects truly are.`;
         }
+    } else if (trapResult) {
+        trapResult.style.display = 'none';
     }
+}
+
+function restartDiagnostic() {
+    // Reset state entirely without harsh page reload
+    state.currentIndex = 0;
+    state.customInputCount = 0;
+    state.darkScore = 0;
+    state.scores = { mask: 0, aggressive: 0, lie: 0, denial: 0, submissive: 0 };
+    
+    document.getElementById('custom-trap-input').value = '';
+    document.getElementById('subject-bio').value = '';
+    document.getElementById('subject-name').value = '';
+    document.getElementById('bio-counter').innerText = '0 / 50';
+    document.getElementById('btn-begin').disabled = true;
+    
+    updateSensoryUI();
+    switchView('result-view', 'intake-view');
 }
