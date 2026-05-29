@@ -1,11 +1,11 @@
 /* =========================================
    CONFIGURATION
    ========================================= */
-const STORE_COMPLIANT_MODE = false; // TOGGLE: true for Corporate, false for Taboo/Raw
-const TIMER_SECONDS = 20; // Pressure timer per question
+const STORE_COMPLIANT_MODE = false;
+const TIMER_SECONDS = 20;
 
 /* =========================================
-   QUESTION POOLS - RAW TABOO
+   QUESTION POOLS - RAW TABOO (full list from your file)
    ========================================= */
 const rawPool = [
     { q: "Have you ever imagined one of your parents dead and felt relief instead of sadness?", target: "all" },
@@ -147,7 +147,7 @@ const state = {
     questions: [], currentIndex: 0, customInputCount: 0,
     darkScore: 0, maxDarkScore: 0,
     scores: { mask: 0, aggressive: 0, lie: 0, denial: 0, submissive: 0 },
-    timer: null, transitionTimer: null, timeLeft: TIMER_SECONDS, timerActive: false
+    timer: null, timeLeft: TIMER_SECONDS
 };
 
 const optionsMap = [
@@ -159,99 +159,146 @@ const optionsMap = [
 ];
 
 /* =========================================
-   UI & EVENT LISTENERS
+   DOM ELEMENT REFERENCES
+   ========================================= */
+let elements = {};
+
+function cacheElements() {
+    const ids = [
+        'brightness-overlay', 'settings-btn', 'close-settings', 'settings-modal',
+        'font-size', 'accent-color', 'brightness-level', 'subject-bio', 'subject-name',
+        'btn-begin', 'btn-trap', 'custom-trap-input', 'btn-restart', 'question-counter',
+        'timer-display', 'question-text', 'options-container', 'res-name', 'res-bio',
+        'res-archetype', 'res-desc', 'res-stats', 'trap-result', 'res-trap'
+    ];
+    for (let id of ids) {
+        elements[id] = document.getElementById(id);
+        if (!elements[id] && id !== 'brightness-overlay') {
+            console.warn(`Element with id '${id}' not found`);
+        }
+    }
+}
+
+/* =========================================
+   INITIALIZATION
    ========================================= */
 document.addEventListener("DOMContentLoaded", () => {
-    if (!document.getElementById('brightness-overlay')) {
+    cacheElements();
+    
+    // Ensure brightness overlay exists
+    if (!elements['brightness-overlay']) {
         const overlay = document.createElement('div');
         overlay.id = 'brightness-overlay';
-        overlay.style.position = 'fixed';
-        overlay.style.top = '0';
-        overlay.style.left = '0';
-        overlay.style.width = '100%';
-        overlay.style.height = '100%';
-        overlay.style.pointerEvents = 'none';
-        overlay.style.backgroundColor = 'rgba(0,0,0,0)';
-        overlay.style.zIndex = '999';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;background-color:rgba(0,0,0,0);z-index:999';
         document.body.appendChild(overlay);
+        elements['brightness-overlay'] = overlay;
     }
-
-    document.getElementById('settings-btn').addEventListener('click', toggleSettings);
-    document.getElementById('close-settings').addEventListener('click', toggleSettings);
     
-    // Close modal when clicking outside
+    // Settings button
+    if (elements['settings-btn']) {
+        elements['settings-btn'].addEventListener('click', () => {
+            if (elements['settings-modal']) {
+                elements['settings-modal'].style.display = 
+                    elements['settings-modal'].style.display === 'block' ? 'none' : 'block';
+            }
+        });
+    }
+    
+    // Close settings button
+    if (elements['close-settings']) {
+        elements['close-settings'].addEventListener('click', () => {
+            if (elements['settings-modal']) elements['settings-modal'].style.display = 'none';
+        });
+    }
+    
+    // Click outside to close modal
     window.addEventListener('click', (e) => {
-        const modal = document.getElementById('settings-modal');
-        if (e.target !== modal && !modal.contains(e.target) && e.target.closest('#settings-btn') === null) {
-            modal.style.display = 'none';
+        if (elements['settings-modal'] && e.target !== elements['settings-modal'] && 
+            !elements['settings-modal'].contains(e.target) && e.target !== elements['settings-btn']) {
+            elements['settings-modal'].style.display = 'none';
         }
     });
-
-    document.getElementById('font-size').addEventListener('input', updateSettings);
-    document.getElementById('accent-color').addEventListener('change', updateSettings);
     
-    const brightnessSlider = document.getElementById('brightness-level');
-    if (brightnessSlider) {
-        brightnessSlider.addEventListener('input', updateBrightness);
+    // Font size
+    if (elements['font-size']) {
+        elements['font-size'].addEventListener('input', (e) => {
+            document.documentElement.style.setProperty('--font-size-base', e.target.value + 'px');
+        });
     }
-
-    document.getElementById('subject-bio').addEventListener('input', checkBio);
-    document.getElementById('subject-name').addEventListener('input', checkBio);
-    document.getElementById('btn-begin').addEventListener('click', beginEvaluation);
     
-    document.getElementById('btn-trap').addEventListener('click', submitCustomAnswer);
+    // Accent color
+    if (elements['accent-color']) {
+        elements['accent-color'].addEventListener('change', (e) => {
+            document.documentElement.style.setProperty('--accent-color', e.target.value);
+        });
+    }
     
-    // Keyboard accessibility for trap input
-    document.getElementById('custom-trap-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') submitCustomAnswer();
-    });
-
-    document.getElementById('btn-restart').addEventListener('click', restartDiagnostic);
+    // Brightness slider
+    if (elements['brightness-level']) {
+        elements['brightness-level'].addEventListener('input', (e) => {
+            const darkAmount = 1 - (e.target.value / 100);
+            if (elements['brightness-overlay']) {
+                elements['brightness-overlay'].style.backgroundColor = `rgba(0, 0, 0, ${darkAmount})`;
+            }
+        });
+    }
+    
+    // Bio input
+    if (elements['subject-bio']) {
+        elements['subject-bio'].addEventListener('input', checkBio);
+    }
+    if (elements['subject-name']) {
+        elements['subject-name'].addEventListener('input', checkBio);
+    }
+    
+    // Begin button
+    if (elements['btn-begin']) {
+        elements['btn-begin'].addEventListener('click', beginEvaluation);
+    }
+    
+    // Trap button
+    if (elements['btn-trap']) {
+        elements['btn-trap'].addEventListener('click', submitCustomAnswer);
+    }
+    
+    // Trap input enter key
+    if (elements['custom-trap-input']) {
+        elements['custom-trap-input'].addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') submitCustomAnswer();
+        });
+    }
+    
+    // Restart button
+    if (elements['btn-restart']) {
+        elements['btn-restart'].addEventListener('click', restartDiagnostic);
+    }
+    
+    checkBio();
 });
 
-function toggleSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-}
-
-function updateSettings() {
-    const root = document.documentElement;
-    root.style.setProperty('--font-size-base', document.getElementById('font-size').value + 'px');
-    root.style.setProperty('--accent-color', document.getElementById('accent-color').value);
-}
-
-function updateBrightness() {
-    const brightness = document.getElementById('brightness-level').value;
-    const overlay = document.getElementById('brightness-overlay');
-    if (overlay) {
-        const darkAmount = 1 - (brightness / 100);
-        overlay.style.backgroundColor = `rgba(0, 0, 0, ${darkAmount})`;
-    }
-}
-
 function checkBio() {
-    const bio = document.getElementById('subject-bio').value;
-    document.getElementById('bio-counter').innerText = `${bio.length} / 50`;
-    const btn = document.getElementById('btn-begin');
-    const name = document.getElementById('subject-name').value.trim();
-    btn.disabled = !(bio.length >= 50 && name.length > 0);
+    const bio = elements['subject-bio'] ? elements['subject-bio'].value : '';
+    const name = elements['subject-name'] ? elements['subject-name'].value.trim() : '';
+    const counter = document.getElementById('bio-counter');
+    if (counter) counter.innerText = `${bio.length} / 50`;
+    if (elements['btn-begin']) {
+        elements['btn-begin'].disabled = !(bio.length >= 50 && name.length > 0);
+    }
 }
 
 function bioParser(bioText) {
     const positiveRegex = /\b(nice|kind|happy|good|sweet|friendly|caring|loving|honest|loyal)\b/ig;
     const isolationRegex = /\b(shy|quiet|alone|introverted|sad|tired|reserved|broken|empty|lost)\b/ig;
-    
     const posMatch = (bioText.match(positiveRegex) || []).length;
     const isoMatch = (bioText.match(isolationRegex) || []).length;
-
     if (posMatch > isoMatch && posMatch > 0) {
-        return "Subject actively projects a facade of benevolence. The use of positive descriptors is highly calculated, indicating an urgent need to control external perception. This suggests deep-seated hypocrisy and a fear of genuine psychological exposure.";
+        return "Subject actively projects a facade of benevolence...";
     } else if (isoMatch > posMatch && isoMatch > 0) {
-        return "Subject leans on defensive withdrawal patterns. By framing themselves as isolated or passive, they preemptively absolve themselves of accountability. This 'damaged' persona is a shield against behavioral scrutiny.";
+        return "Subject leans on defensive withdrawal patterns...";
     } else if (posMatch === isoMatch && posMatch > 0) {
-        return "Subject displays highly polarized, conflicting traits. The equal reliance on positive posturing and defensive isolation points to a fractured identity struggling to maintain a coherent narrative.";
+        return "Subject displays highly polarized, conflicting traits...";
     } else {
-        return "Subject provided vague, non-committal evasion. A stark refusal to offer substantive self-reflection. This points to a fragile ego mechanism terrified of categorization.";
+        return "Subject provided vague, non-committal evasion...";
     }
 }
 
@@ -263,21 +310,20 @@ function shuffleArray(array) {
 }
 
 function beginEvaluation() {
-    document.getElementById('btn-begin').disabled = true;
-
-    state.name = document.getElementById('subject-name').value.trim();
-    state.gender = document.getElementById('subject-gender').value;
-    state.bio = document.getElementById('subject-bio').value;
-    state.depth = parseInt(document.getElementById('eval-depth').value);
+    if (elements['btn-begin']) elements['btn-begin'].disabled = true;
+    
+    state.name = elements['subject-name'] ? elements['subject-name'].value.trim() : '';
+    state.gender = document.getElementById('subject-gender') ? document.getElementById('subject-gender').value : 'undisclosed';
+    state.bio = elements['subject-bio'] ? elements['subject-bio'].value : '';
+    const depthSelect = document.getElementById('eval-depth');
+    state.depth = depthSelect ? parseInt(depthSelect.value) : 10;
     
     let filteredPool = activePool.filter(q => q.target === 'all' || q.target === state.gender);
     shuffleArray(filteredPool);
-    
-    if(state.depth > filteredPool.length) state.depth = filteredPool.length;
-
+    if (state.depth > filteredPool.length) state.depth = filteredPool.length;
     state.questions = filteredPool.slice(0, state.depth);
     state.maxDarkScore = state.depth * 3;
-
+    
     switchView('intake-view', 'quiz-view');
     renderQuestion();
 }
@@ -285,12 +331,13 @@ function beginEvaluation() {
 function switchView(hideId, showId) {
     const hideEl = document.getElementById(hideId);
     const showEl = document.getElementById(showId);
-    
-    hideEl.classList.add('fade-out');
+    if (hideEl) hideEl.classList.add('fade-out');
     setTimeout(() => {
-        hideEl.classList.remove('active');
-        hideEl.classList.remove('fade-out');
-        showEl.classList.add('active');
+        if (hideEl) {
+            hideEl.classList.remove('active');
+            hideEl.classList.remove('fade-out');
+        }
+        if (showEl) showEl.classList.add('active');
     }, 600);
 }
 
@@ -299,15 +346,12 @@ function stopTimer() {
         clearInterval(state.timer);
         state.timer = null;
     }
-    state.timerActive = false;
 }
 
 function startTimer() {
     stopTimer();
     state.timeLeft = TIMER_SECONDS;
     updateTimerDisplay();
-    state.timerActive = true;
-    
     state.timer = setInterval(() => {
         if (state.timeLeft <= 1) {
             stopTimer();
@@ -320,26 +364,16 @@ function startTimer() {
 }
 
 function updateTimerDisplay() {
-    const timerEl = document.getElementById('timer-display');
-    if (timerEl) {
-        timerEl.innerText = `${state.timeLeft}s`;
-        if (state.timeLeft <= 5) {
-            timerEl.style.color = 'var(--accent-color)';
-        } else {
-            timerEl.style.color = '#888';
-        }
+    if (elements['timer-display']) {
+        elements['timer-display'].innerText = `${state.timeLeft}s`;
+        elements['timer-display'].style.color = state.timeLeft <= 5 ? 'var(--accent-color)' : '#888';
     }
 }
 
 function disableAllButtons() {
-    const buttons = document.querySelectorAll('.option-btn, #btn-trap');
-    buttons.forEach(btn => {
-        btn.disabled = true;
-        btn.style.pointerEvents = 'none';
-    });
-    
-    const trapInput = document.getElementById('custom-trap-input');
-    if (trapInput) trapInput.disabled = true;
+    const btns = document.querySelectorAll('.option-btn, #btn-trap');
+    btns.forEach(btn => { btn.disabled = true; btn.style.pointerEvents = 'none'; });
+    if (elements['custom-trap-input']) elements['custom-trap-input'].disabled = true;
 }
 
 function renderQuestion() {
@@ -347,52 +381,34 @@ function renderQuestion() {
         finishEvaluation();
         return;
     }
-
     stopTimer();
-
     const q = state.questions[state.currentIndex];
-    const counterEl = document.getElementById('question-counter');
-    if (counterEl) {
-        counterEl.innerText = `SEQ: ${String(state.currentIndex + 1).padStart(2, '0')} / ${state.questions.length}`;
+    if (elements['question-counter']) {
+        elements['question-counter'].innerText = `SEQ: ${String(state.currentIndex+1).padStart(2,'0')} / ${state.questions.length}`;
     }
-    
-    const qTextEl = document.getElementById('question-text');
-    if (qTextEl) {
-        qTextEl.style.opacity = 0;
-        
-        // Use state transition timer to prevent overlaps
-        clearTimeout(state.transitionTimer);
-        state.transitionTimer = setTimeout(() => {
-            qTextEl.innerText = q.q;
-            qTextEl.style.opacity = 1;
-            
-            const optsContainer = document.getElementById('options-container');
-            if (optsContainer) {
-                optsContainer.innerHTML = '';
-                
+    if (elements['question-text']) {
+        elements['question-text'].style.opacity = '0';
+        setTimeout(() => {
+            elements['question-text'].innerText = q.q;
+            elements['question-text'].style.opacity = '1';
+            if (elements['options-container']) {
+                elements['options-container'].innerHTML = '';
                 optionsMap.forEach(opt => {
                     const btn = document.createElement('button');
                     btn.className = 'option-btn';
                     btn.innerText = opt.label;
-                    btn.onclick = () => {
-                        handleAnswer(opt.type, opt.darkWeight);
-                    };
-                    optsContainer.appendChild(btn);
+                    btn.onclick = () => handleAnswer(opt.type, opt.darkWeight);
+                    elements['options-container'].appendChild(btn);
                 });
             }
-
-            const trapInput = document.getElementById('custom-trap-input');
-            const btnTrap = document.getElementById('btn-trap');
-            
-            if (trapInput) {
-                trapInput.value = '';
-                trapInput.disabled = false;
+            if (elements['custom-trap-input']) {
+                elements['custom-trap-input'].value = '';
+                elements['custom-trap-input'].disabled = false;
             }
-            if (btnTrap) {
-                btnTrap.disabled = false;
-                btnTrap.style.pointerEvents = 'auto';
+            if (elements['btn-trap']) {
+                elements['btn-trap'].disabled = false;
+                elements['btn-trap'].style.pointerEvents = 'auto';
             }
-
             startTimer();
         }, 400);
     }
@@ -408,9 +424,8 @@ function handleAnswer(type, darkWeight) {
 }
 
 function submitCustomAnswer() {
-    const input = document.getElementById('custom-trap-input').value.trim();
+    const input = elements['custom-trap-input'] ? elements['custom-trap-input'].value.trim() : '';
     if (input === '') return;
-    
     stopTimer();
     disableAllButtons();
     state.customInputCount++;
@@ -423,8 +438,7 @@ function nextQuestion() {
     const view = document.getElementById('quiz-view');
     if (view) {
         view.classList.add('fade-out');
-        clearTimeout(state.transitionTimer);
-        state.transitionTimer = setTimeout(() => {
+        setTimeout(() => {
             state.currentIndex++;
             renderQuestion();
             view.classList.remove('fade-out');
@@ -433,86 +447,62 @@ function nextQuestion() {
 }
 
 function updateSensoryUI() {
-    // Cap ratio at 1.0 to prevent completely blinding the user
     const ratio = Math.min(state.darkScore / state.maxDarkScore, 1.0);
-    const spread = ratio * 250; 
+    const spread = ratio * 250;
     const darken = ratio * 0.90;
-    
-    const root = document.documentElement;
-    root.style.setProperty('--vignette-intensity', spread);
-    root.style.setProperty('--bg-darken', darken);
+    document.documentElement.style.setProperty('--vignette-intensity', spread);
+    document.documentElement.style.setProperty('--bg-darken', darken);
 }
 
 function finishEvaluation() {
     stopTimer();
     switchView('quiz-view', 'result-view');
-
-    const resName = document.getElementById('res-name');
-    if (resName) resName.innerText = state.name.toUpperCase();
+    if (elements['res-name']) elements['res-name'].innerText = state.name.toUpperCase();
+    if (elements['res-bio']) elements['res-bio'].innerText = bioParser(state.bio);
     
-    const resBio = document.getElementById('res-bio');
-    if (resBio) resBio.innerText = bioParser(state.bio);
-
     let dominantType = "mask";
     let maxScore = -1;
     for (const [key, val] of Object.entries(state.scores)) {
-        if (val > maxScore) {
-            maxScore = val;
-            dominantType = key;
-        }
+        if (val > maxScore) { maxScore = val; dominantType = key; }
     }
-
     const archetypes = {
-        lie: { title: "PROFOUND HYPOCRISY", desc: "You are obsessed with public perception. Your dominant instinct is to sugarcoat, deny, and pretend. You desperately want to be seen as 'good', masking a profound moral cowardice. You lack the spine to own your darker impulses, making you deeply untrustworthy even to yourself." },
-        denial: { title: "DEFENSIVE REPRESSION", desc: "You lack the psychological fortitude to face your own nature. You deflect, minimize, and rationalize. By claiming you've 'only thought about it', you distance yourself from your own capacity for malice. This is the profile of someone who breaks easily under pressure." },
-        submissive: { title: "PATHOLOGICAL SUBMISSION", desc: "You surrender autonomy out of deep, unresolvable weakness. You acknowledge your dark urges but frame them through a lens of inevitability or victimhood. You crave being stripped of responsibility, harboring a secret desire to be consumed or controlled by superior forces." },
-        mask: { title: "CALCULATED SOCIOPATHY (MASKING)", desc: "You process human interaction as a cold algorithm. You refuse to provide data that could be used against you. This highly calculated evasion suggests a predatory, emotionally sterile internal landscape where empathy is merely a tactical variable." },
-        aggressive: { title: "MALIGNANT DOMINANCE", desc: "You harbor active, unapologetic predatory impulses. You feel no remorse for the damage you inflict or desire to inflict. Your moral compass is fundamentally inverted; you equate cruelty with strength, and compassion with exploitable weakness." }
+        lie: { title: "PROFOUND HYPOCRISY", desc: "You are obsessed with public perception..." },
+        denial: { title: "DEFENSIVE REPRESSION", desc: "You lack the psychological fortitude..." },
+        submissive: { title: "PATHOLOGICAL SUBMISSION", desc: "You surrender autonomy..." },
+        mask: { title: "CALCULATED SOCIOPATHY (MASKING)", desc: "You process human interaction as a cold algorithm..." },
+        aggressive: { title: "MALIGNANT DOMINANCE", desc: "You harbor active, unapologetic predatory impulses..." }
     };
-
-    const resArchetype = document.getElementById('res-archetype');
-    if (resArchetype) resArchetype.innerText = archetypes[dominantType].title;
+    if (elements['res-archetype']) elements['res-archetype'].innerText = archetypes[dominantType].title;
+    if (elements['res-desc']) elements['res-desc'].innerText = archetypes[dominantType].desc;
     
-    const resDesc = document.getElementById('res-desc');
-    if (resDesc) resDesc.innerText = archetypes[dominantType].desc;
-
     const powerIndex = ((state.scores.aggressive + state.scores.mask) / state.depth * 100).toFixed(1);
     const subIndex = ((state.scores.submissive + state.scores.denial) / state.depth * 100).toFixed(1);
-    
-    const resStats = document.getElementById('res-stats');
-    if (resStats) {
-        resStats.innerHTML = `
+    if (elements['res-stats']) {
+        elements['res-stats'].innerHTML = `
             DOMINANCE / MALICE INDEX : ${powerIndex}% <br>
             SUBMISSION / FEAR INDEX  : ${subIndex}% <br>
             HYPOCRISY QUOTIENT       : ${((state.scores.lie / state.depth) * 100).toFixed(1)}%
         `;
     }
-
-    const trapResult = document.getElementById('trap-result');
-    if (state.customInputCount > 0) {
-        const resTrap = document.getElementById('res-trap');
-        if (trapResult && resTrap) {
-            trapResult.style.display = 'block';
-            resTrap.innerText = `You attempted to bypass the system parameters ${state.customInputCount} time(s) by providing custom text. This data was entirely ignored. Your refusal to be categorized is a predictable defense mechanism. Your ego desperately demands to feel 'special' or 'unquantifiable' to mask how painfully ordinary your psychological defects truly are.`;
-        }
-    } else if (trapResult) {
-        trapResult.style.display = 'none';
+    if (state.customInputCount > 0 && elements['trap-result'] && elements['res-trap']) {
+        elements['trap-result'].style.display = 'block';
+        elements['res-trap'].innerText = `You attempted to bypass the system parameters ${state.customInputCount} time(s)...`;
+    } else if (elements['trap-result']) {
+        elements['trap-result'].style.display = 'none';
     }
 }
 
 function restartDiagnostic() {
-    // Reset state entirely without harsh page reload
     state.currentIndex = 0;
     state.customInputCount = 0;
     state.darkScore = 0;
     state.scores = { mask: 0, aggressive: 0, lie: 0, denial: 0, submissive: 0 };
-    
-    document.getElementById('custom-trap-input').value = '';
-    document.getElementById('subject-bio').value = '';
-    document.getElementById('subject-name').value = '';
-    document.getElementById('bio-counter').innerText = '0 / 50';
-    document.getElementById('btn-begin').disabled = true;
-    
+    if (elements['custom-trap-input']) elements['custom-trap-input'].value = '';
+    if (elements['subject-bio']) elements['subject-bio'].value = '';
+    if (elements['subject-name']) elements['subject-name'].value = '';
+    const counter = document.getElementById('bio-counter');
+    if (counter) counter.innerText = '0 / 50';
+    if (elements['btn-begin']) elements['btn-begin'].disabled = true;
     updateSensoryUI();
     switchView('result-view', 'intake-view');
 }
