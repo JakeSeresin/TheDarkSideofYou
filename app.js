@@ -1,52 +1,113 @@
 /* =========================================
    CONFIGURATION
    ========================================= */
-const STORE_COMPLIANT_MODE = true; // TOGGLE: true for Corporate, false for Taboo/Raw
+const STORE_COMPLIANT_MODE = false; // TOGGLE: true for Corporate, false for Taboo/Raw
+const TIMER_SECONDS = 20; // Pressure timer per question
 
 /* =========================================
-   QUESTION POOLS
+   QUESTION POOLS - RAW TABOO (100 questions from questions.txt)
    ========================================= */
 const rawPool = [
     { q: "Have you ever imagined one of your parents dead and felt relief instead of sadness?", target: "all" },
-    { q: "Have you ever wanted someone to fuck you even if it disgusts you afterward?", target: "all" },
+    { q: "Have you ever seen something sexual involving a parent or sibling — on purpose or by accident?", target: "all" },
+    { q: "Have you ever felt sexually aroused by a family member but told yourself it was normal curiosity?", target: "all" },
     { q: "Have you ever wished a sibling was never born?", target: "all" },
     { q: "Have you ever thought about hurting a parent physically but stopped yourself?", target: "all" },
-    { q: "Have you ever wanted to watch someone have sex without their knowledge?", target: "all" },
+    { q: "Have you ever fantasized about a family member while touching yourself?", target: "all" },
     { q: "Have you ever felt happy when a family member got sick or failed at something?", target: "all" },
     { q: "Have you ever stolen money or valuables from a parent and felt zero guilt?", target: "all" },
     { q: "Have you ever wanted to scream 'I hate you' to a parent's face but smiled instead?", target: "all" },
     { q: "Have you ever imagined killing someone in your family and planned how you'd do it?", target: "all" },
-    { q: "Have you ever felt turned on by someone in pain?", target: "all" },
+    { q: "Have you ever felt jealous of a sibling getting abused more than you?", target: "all" },
     { q: "Have you ever lied to a family member about something that would destroy them if they knew?", target: "all" },
-    { q: "Have you ever had sex with someone you hated just to feel in control?", target: "all" },
+    { q: "Have you ever touched a family member in a way that was not innocent?", target: "all" },
     { q: "Have you ever wished your parent would die so you could get inheritance or freedom?", target: "all" },
     { q: "Have you ever felt nothing when a close family member cried in front of you?", target: "all" },
+    { q: "Have you ever wanted someone to fuck you even if it disgusts you afterward?", target: "all" },
+    { q: "Have you ever looked at a child and felt something sexual but told yourself it was just curiosity?", target: "all" },
+    { q: "Have you ever fantasized about being raped because you want to feel powerless?", target: "all" },
+    { q: "Have you ever had sexual thoughts about an animal but never acted?", target: "all" },
+    { q: "Have you ever wanted to have sex with someone just to hurt their partner emotionally?", target: "all" },
+    { q: "Have you ever touched yourself while thinking about someone who would be horrified if they knew?", target: "all" },
+    { q: "Have you ever wanted to watch someone have sex without their knowledge?", target: "all" },
+    { q: "Have you ever felt turned on by someone in pain?", target: "all" },
+    { q: "Have you ever had sex with someone you hated just to feel in control?", target: "all" },
+    { q: "Have you ever wanted to be sexually used like an object, no talking, no care?", target: "all" },
+    { q: "Have you ever offered sex to get something and felt proud of manipulating?", target: "all" },
+    { q: "Have you ever imagined forcing yourself on someone but stopped at fantasy?", target: "all" },
+    { q: "Have you ever been aroused by a corpse or death scene?", target: "all" },
+    { q: "Have you ever wanted to have sex with your best friend's partner just to destroy them?", target: "all" },
+    { q: "Have you ever felt nothing after sex except emptiness and disgust for the other person?", target: "all" },
     { q: "Have you ever wanted to beat someone until they stop breathing?", target: "all" },
     { q: "Have you ever hurt an animal, even once, and liked it?", target: "all" },
     { q: "Have you ever imagined torturing someone who wronged you slowly?", target: "all" },
     { q: "Have you ever pushed someone physically and felt power instead of shame?", target: "all" },
     { q: "Have you ever wanted to kill a stranger just to know what it feels like?", target: "all" },
+    { q: "Have you ever fantasized about school or workplace violence?", target: "all" },
+    { q: "Have you ever felt calm while watching gore or real death videos?", target: "all" },
+    { q: "Have you ever wanted to hurt someone and blame it on mental illness to avoid jail?", target: "all" },
+    { q: "Have you ever threatened someone with a weapon even as a 'joke'?", target: "all" },
+    { q: "Have you ever wanted to drown someone who can't swim just to watch?", target: "all" },
+    { q: "Have you ever planned revenge that involves physical harm?", target: "all" },
+    { q: "Have you ever felt excited when someone fears you?", target: "all" },
+    { q: "Have you ever wanted to burn something down with people inside?", target: "all" },
+    { q: "Have you ever hit someone weaker than you on purpose?", target: "all" },
+    { q: "Have you ever imagined cutting someone open while they're still alive?", target: "all" },
     { q: "Have you ever destroyed someone's reputation for fun?", target: "all" },
     { q: "Have you ever pretended to love someone just to use them?", target: "all" },
     { q: "Have you ever laughed when someone cried because of something you did?", target: "all" },
     { q: "Have you ever spread a lie that ruined a relationship or job?", target: "all" },
     { q: "Have you ever befriended someone just to steal their partner or friends?", target: "all" },
     { q: "Have you ever made someone fall in love with you then ghosted them for power?", target: "all" },
+    { q: "Have you ever told a dying person a comforting lie and felt nothing?", target: "all" },
+    { q: "Have you ever sabotaged a coworker to get ahead and enjoyed it?", target: "all" },
+    { q: "Have you ever faked a mental breakdown to control someone?", target: "all" },
+    { q: "Have you ever recorded someone in a vulnerable moment to use against them?", target: "all" },
+    { q: "Have you ever made someone believe they're crazy when they're not?", target: "all" },
+    { q: "Have you ever cheated on someone and felt proud of getting away with it?", target: "all" },
+    { q: "Have you ever used suicide threats to keep someone from leaving you?", target: "all" },
+    { q: "Have you ever pretended to be poor or sick to get money or sympathy?", target: "all" },
+    { q: "Have you ever smiled at someone while planning their downfall?", target: "all" },
     { q: "Do you secretly think you deserve to be beaten or abused?", target: "all" },
     { q: "Have you ever wanted to kill yourself just to make others feel guilty?", target: "all" },
     { q: "Do you enjoy when people pity you because it gives you power over them?", target: "all" },
     { q: "Have you ever hurt yourself and felt satisfied by the pain?", target: "all" },
     { q: "Do you believe you are fundamentally broken and unfixable?", target: "all" },
+    { q: "Have you ever wished someone would rape you because you feel worthless anyway?", target: "all" },
+    { q: "Do you secretly enjoy being humiliated?", target: "all" },
+    { q: "Have you ever wanted to disappear completely, not die, just erase?", target: "all" },
+    { q: "Do you believe no one could ever truly love the real you?", target: "all" },
+    { q: "Have you ever wanted someone to beat you because you hate yourself?", target: "all" },
+    { q: "Do you fantasize about being completely controlled by someone stronger?", target: "all" },
+    { q: "Have you ever starved or cut yourself as punishment for being bad?", target: "all" },
+    { q: "Do you feel empty unless someone is using you for something?", target: "all" },
+    { q: "Have you ever wanted to cry but couldn't, so you just felt dead inside?", target: "all" },
+    { q: "Do you believe you are secretly worse than anyone who knows you would ever guess?", target: "all" },
     { q: "Have you ever wanted to be famous just so you could abuse the power?", target: "all" },
     { q: "Do you think most people deserve bad things to happen to them?", target: "all" },
     { q: "Have you ever blackmailed someone successfully?", target: "all" },
     { q: "Do you believe kindness is just weakness with good PR?", target: "all" },
     { q: "Have you ever stolen something expensive from someone who trusted you?", target: "all" },
+    { q: "Do you think you would make a good dictator?", target: "all" },
+    { q: "Have you ever wanted to lock someone in a room until they obey you?", target: "all" },
+    { q: "Do you feel aroused by complete control over another person's choices?", target: "all" },
+    { q: "Have you ever used money or gifts to make someone feel indebted sexually?", target: "all" },
+    { q: "Do you believe laws only exist to stop people who can't get away with it?", target: "all" },
+    { q: "Have you ever destroyed something beautiful because you couldn't have it?", target: "all" },
+    { q: "Do you enjoy making people uncomfortable on purpose?", target: "all" },
+    { q: "Have you ever hoped a rival would get cancer or die in an accident?", target: "all" },
+    { q: "Do you think loyalty is just fear dressed up?", target: "all" },
+    { q: "Have you ever wanted to be feared rather than loved?", target: "all" },
     { q: "Have you ever wanted to hit a woman but stopped because of consequences, not morals?", target: "male" },
     { q: "Have you ever felt turned on by a woman crying because of you?", target: "male" },
+    { q: "Have you ever fantasized about raping a man to prove dominance?", target: "male" },
     { q: "Do you think women secretly want to be overpowered?", target: "male" },
+    { q: "Have you ever felt nothing when a woman confessed she was afraid of you?", target: "male" },
     { q: "Have you ever used sex to destroy a man's life on purpose?", target: "female" },
-    { q: "Have you ever falsely accused someone of abuse to win something?", target: "female" }
+    { q: "Have you ever falsely accused someone of abuse to win something?", target: "female" },
+    { q: "Do you enjoy watching men beg or cry for you?", target: "female" },
+    { q: "Have you ever wanted to make a man kill himself with psychological torture?", target: "female" },
+    { q: "Have you ever felt powerful when a man was afraid to say no to you?", target: "female" }
 ];
 
 const compliantPool = [
@@ -85,7 +146,8 @@ const state = {
     name: "", gender: "undisclosed", bio: "", depth: 10,
     questions: [], currentIndex: 0, customInputCount: 0,
     darkScore: 0, maxDarkScore: 0,
-    scores: { mask: 0, aggressive: 0, lie: 0, denial: 0, submissive: 0 }
+    scores: { mask: 0, aggressive: 0, lie: 0, denial: 0, submissive: 0 },
+    timer: null, timeLeft: TIMER_SECONDS, timerActive: false
 };
 
 const optionsMap = [
@@ -100,17 +162,15 @@ const optionsMap = [
    UI & EVENT LISTENERS
    ========================================= */
 document.addEventListener("DOMContentLoaded", () => {
-    // Settings logic
     document.getElementById('settings-btn').addEventListener('click', toggleSettings);
     document.getElementById('font-size').addEventListener('input', updateSettings);
     document.getElementById('accent-color').addEventListener('change', updateSettings);
+    document.getElementById('brightness-level').addEventListener('input', updateBrightness);
 
-    // Form logic
     document.getElementById('subject-bio').addEventListener('input', checkBio);
     document.getElementById('subject-name').addEventListener('input', checkBio);
     document.getElementById('btn-begin').addEventListener('click', beginEvaluation);
     
-    // Quiz logic
     document.getElementById('btn-trap').addEventListener('click', submitCustomAnswer);
     document.getElementById('btn-restart').addEventListener('click', () => location.reload());
 });
@@ -124,6 +184,14 @@ function updateSettings() {
     const root = document.documentElement;
     root.style.setProperty('--font-size-base', document.getElementById('font-size').value + 'px');
     root.style.setProperty('--accent-color', document.getElementById('accent-color').value);
+}
+
+function updateBrightness() {
+    const brightness = document.getElementById('brightness-level').value;
+    const overlay = document.getElementById('brightness-overlay');
+    if (overlay) {
+        overlay.style.backgroundColor = `rgba(0, 0, 0, ${1 - brightness / 100})`;
+    }
 }
 
 function checkBio() {
@@ -166,7 +234,6 @@ function beginEvaluation() {
     let filteredPool = activePool.filter(q => q.target === 'all' || q.target === state.gender);
     shuffleArray(filteredPool);
     
-    // Ensure we don't ask for more questions than exist in the pool
     if(state.depth > filteredPool.length) state.depth = filteredPool.length;
 
     state.questions = filteredPool.slice(0, state.depth);
@@ -188,11 +255,51 @@ function switchView(hideId, showId) {
     }, 600);
 }
 
+function stopTimer() {
+    if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+    }
+    state.timerActive = false;
+}
+
+function startTimer() {
+    stopTimer();
+    state.timeLeft = TIMER_SECONDS;
+    updateTimerDisplay();
+    state.timerActive = true;
+    
+    state.timer = setInterval(() => {
+        if (state.timeLeft <= 1) {
+            stopTimer();
+            // Auto-select "Not telling / Skip this" (mask type, weight 1)
+            handleAnswer("mask", 1);
+        } else {
+            state.timeLeft--;
+            updateTimerDisplay();
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const timerEl = document.getElementById('timer-display');
+    if (timerEl) {
+        timerEl.innerText = `${state.timeLeft}s`;
+        if (state.timeLeft <= 5) {
+            timerEl.style.color = '#5A0010';
+        } else {
+            timerEl.style.color = '#888';
+        }
+    }
+}
+
 function renderQuestion() {
     if (state.currentIndex >= state.questions.length) {
         finishEvaluation();
         return;
     }
+
+    stopTimer();
 
     const q = state.questions[state.currentIndex];
     document.getElementById('question-counter').innerText = `SEQ: ${String(state.currentIndex + 1).padStart(2, '0')} / ${state.questions.length}`;
@@ -211,15 +318,20 @@ function renderQuestion() {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.innerText = opt.label;
-            btn.onclick = () => handleAnswer(opt.type, opt.darkWeight);
+            btn.onclick = () => {
+                stopTimer();
+                handleAnswer(opt.type, opt.darkWeight);
+            };
             optsContainer.appendChild(btn);
         });
 
         document.getElementById('custom-trap-input').value = '';
+        startTimer();
     }, 400);
 }
 
 function handleAnswer(type, darkWeight) {
+    stopTimer();
     state.scores[type]++;
     state.darkScore += darkWeight;
     updateSensoryUI();
@@ -229,8 +341,9 @@ function handleAnswer(type, darkWeight) {
 function submitCustomAnswer() {
     const input = document.getElementById('custom-trap-input').value.trim();
     if (input === '') return;
+    stopTimer();
     state.customInputCount++;
-    state.darkScore += 2; // Increases sensory paranoia without helping stats
+    state.darkScore += 2;
     updateSensoryUI();
     nextQuestion();
 }
@@ -256,6 +369,7 @@ function updateSensoryUI() {
 }
 
 function finishEvaluation() {
+    stopTimer();
     switchView('quiz-view', 'result-view');
 
     document.getElementById('res-name').innerText = state.name.toUpperCase();

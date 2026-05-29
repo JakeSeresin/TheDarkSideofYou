@@ -10,6 +10,9 @@
 </head>
 <body>
 
+    <!-- Brightness Overlay -->
+    <div id="brightness-overlay"></div>
+
     <!-- Sensory Overlay -->
     <div id="vignette"></div>
 
@@ -31,6 +34,10 @@
                 <option value="#6B4400">Dark Amber</option>
                 <option value="#1F4D00">Toxic Green</option>
             </select>
+        </div>
+        <div class="setting-group">
+            <label>Brightness Control</label>
+            <input type="range" id="brightness-level" min="0" max="100" value="100">
         </div>
     </div>
 
@@ -74,6 +81,7 @@
     <!-- Stage 2: The Quiz Engine -->
     <div id="quiz-view" class="view">
         <div id="question-counter">SEQ: 01 / 10</div>
+        <div id="timer-display">20s</div>
         <div id="question-text">Loading...</div>
         
         <div class="options-container" id="options-container">
